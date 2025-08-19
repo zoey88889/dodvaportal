@@ -1,0 +1,70 @@
+{
+  "news": [
+    {
+      "headline": "本地生活平台 MVP 上线",
+      "time": "2025-08-19",
+      "summary": "首个 Demo：资讯 / 商家 / 广告一体化。每天一条也能滚动更新。",
+      "source": "Dodva",
+      "link": "https://example.com/news/mvp"
+    }
+  ],
+  "merchants": [
+    {
+      "name": "星河按摩馆",
+      "tagline": "中式理疗 · 放松身心",
+      "category": "服务/理疗",
+      "address": "Sunset Park, Brooklyn",
+      "hours": "11:00–21:00",
+      "phone": "718-000-1234",
+      "price": "$48/60min",
+      "link": "https://example.com/merchant/xinghe"
+    }
+ ],
+  "ads": [
+    {
+      "title": "🏙️ SoHo 店铺出租",
+      "area": "7200 sqf",
+      "price": "$4200/月",
+      "details": "位置优越，适合餐饮 / 零售",
+      "contact": "wechat: dodva-agent",
+      "link": "https://example.com/ad/soho-lease"
+    },
+    {
+      "title": "🍜 华人餐馆转让",
+      "area": "1500 sqf",
+      "price": "$50,000 转让费",
+      "details": "含全套厨房设备，客流量大",
+      "contact": "646-000-1234"
+    } {
+      "type": "job",
+      "title": "招聘前台",
+      "details": "美容店招聘前台，全职/兼职均可。",
+      "location": "Flushing, NY",
+      "pay": "$18/小时",
+      "contact": "微信: job123"
+    },
+    {
+      "type": "listing_rent",
+      "title": "公寓出租",
+      "details": "两室一厅，近地铁。",
+      "location": "Queens, NY",
+      "price": "$2200/月",
+      "contact": "电话: 123-456-7890"
+    },
+    {
+      "type": "biz_transfer",
+      "title": "餐馆转让",
+      "details": "老客户稳定，接手可营运。",
+      "location": "Brooklyn, NY",
+      "price": "$85,000",
+      "contact": "联系人: 王先生"
+    },
+    {
+      "type": "ad_top",
+      "title": "🔥 广告置顶：SoHo 店铺出租",
+      "details": "面积 7200 sqf，租金 $4200/月。",
+      "link": "https://example.com",
+      "contact": "☎ 718-xxx-xxxx"
+    }
+  ]
+}

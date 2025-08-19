@@ -1,0 +1,60 @@
+{
+  "date": "2025-08-19",
+  "items": [
+    {
+      "type": "news",
+      "title": "法拉盛夜市开放时间延长",
+      "summary": "本周末加开夜场，新增华人小吃摊位。",
+      "location": "Flushing",
+      "tags": ["活动","餐饮"],
+      "link": "https://example.com/news/1"
+    },
+    {
+      "type": "merchant",
+      "name": "星海干洗店",
+      "tagline": "当日取衣 · 环保溶剂",
+      "category": "服务",
+      "address": "Midtown East",
+      "hours": "9:00-20:00",
+      "phone": "(212) 555-1288",
+      "price": "衬衫 $3",
+      "link": "#"
+    },
+    {
+      "type": "listing_rent",
+      "title": "法拉盛靠近主街·一居出租",
+      "price": "$2100/月",
+      "location": "Flushing",
+      "details": "近地铁，拎包入住",
+      "contact": "(917) 000-0000",
+      "link": "#"
+    },
+    {
+      "type": "biz_transfer",
+      "title": "曼哈顿奶茶店转让",
+      "price": "$85,000",
+      "location": "Lower East Side",
+      "details": "人流好，证照齐全",
+      "contact": "(646) 000-0000",
+      "link": "#"
+    },
+    {
+      "type": "job",
+      "title": "中餐厅招前厅/厨房",
+      "pay": "$18–$22/h",
+      "location": "Queens",
+      "details": "提供餐补，合法工卡优先",
+      "contact": "hr@xxx.com",
+      "link": "#"
+    },
+    {
+      "type": "doctor",
+      "title": "华人牙医 · 当日急诊",
+      "specialty": "牙科",
+      "location": "Brooklyn",
+      "hours": "10:00-18:00",
+      "phone": "(718) 000-0000",
+      "link": "#"
+    }
+  ]
+}
