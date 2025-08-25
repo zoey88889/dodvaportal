@@ -1,1 +1,222 @@
-<!doctype html><html lang=zh-CN><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Dodva 社区 · BBS MVP</title><link rel=preconnect href=https://cdn.jsdelivr.net crossorigin><style>:root{--bg:#0b0f1a;--fg:#eaf2ff;--line:rgba(147,197,253,.18)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans SC",sans-serif}header{position:sticky;top:0;padding:10px 16px;background:linear-gradient(180deg,rgba(10,16,34,.55),rgba(10,16,34,.35));border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}.wrap{max-width:1000px;margin:0 auto;padding:16px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.pill{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(147,197,253,.06);color:#eaf2ff;cursor:pointer;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px}.card{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(147,197,253,.06)}.muted{opacity:.75}input,select,textarea{width:100%;padding:8px;border-radius:10px;border:1px solid var(--line);background:rgba(147,197,253,.06);color:#eaf2ff}textarea{min-height:120px}.meta{font-size:12px;opacity:.75}.link{color:#93c5fd}</style></head><body><header><div>🌆 社区BBS</div><div class=row style=margin-left:auto><span id=who class=muted>未登录</span> <button id=btnLogin class=pill>登录/注册</button> <button id=btnLogout class=pill style=display:none>退出</button></div></header><div class=wrap><section class=card><div class=row><select id=boardSel></select> <input id=title placeholder="标题（如：SoHo 店铺出租 7200sqf/每月$4200）"></div><div class=row style=margin-top:8px><textarea id=body placeholder=内容支持简要信息（位置/面积/租金/联系方式）或任意描述。></textarea></div><div class=row style=margin-top:8px><button id=btnPost class=pill>发布</button> <span class=muted>登录后可发帖；发出即刻可见。</span></div></section><h3 style="margin:14px 0 8px">📌 最新帖子</h3><div id=threadList class=grid></div><section id=threadDetail class=card style=display:none;margin-top:14px><div id=tdTitle style=font-weight:800></div><div id=tdMeta class=meta></div><div id=tdBody style="margin:8px 0 12px;white-space:pre-wrap"></div><div class=row><textarea id=replyBody placeholder=回复内容…></textarea> <button id=btnReply class=pill>回帖</button></div><div id=replyList style=margin-top:10px></div></section></div><script type=module>import{createClient}from"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";const SUPABASE_URL="https://ijwamnzsyqpufkqgwvzi.supabase.co",SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqd2FtbnpzeXFwdWZrcWd3dnppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MjA3MTAsImV4cCI6MjA3MTE5NjcxMH0.-7zCB0MVmT0ki-eNUIuMvjNY0TbtxsnVHZv7h3qfJCA",sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY),$=e=>document.querySelector(e),who=$("#who"),btnLogin=$("#btnLogin"),btnLogout=$("#btnLogout"),boardSel=$("#boardSel"),titleEl=$("#title"),bodyEl=$("#body"),threadList=$("#threadList"),detail=$("#threadDetail"),tdTitle=$("#tdTitle"),tdMeta=$("#tdMeta"),tdBody=$("#tdBody"),replyBody=$("#replyBody"),btnReply=$("#btnReply");let me=null,currentThreadId=null;async function loadBoards(){const{data:e,error:t}=await sb.from("boards").select("*").eq("is_hidden",!1).order("id");if(t)return console.error(t);boardSel.innerHTML=e.map(e=>`<option value="${e.id}">${e.name}</option>`).join("")}async function publishThread(){if(!me)return void alert("请先登录");const e=parseInt(boardSel.value,10),t=titleEl.value.trim(),a=bodyEl.value.trim();if(!t)return alert("请填写标题");const{error:n}=await sb.from("threads").insert({board_id:e,title:t,body:a,author:me.id});if(n)return alert("发布失败："+n.message);titleEl.value="",bodyEl.value="",await loadThreads()}async function loadThreads(){const{data:e,error:t}=await sb.from("threads").select("id,title,created_at,is_pinned,boards(name),profiles:author(nickname)").order("is_pinned",{ascending:!1}).order("created_at",{ascending:!1}).limit(20);t?console.error(t):(threadList.innerHTML=e.map(e=>`\n    <article class="card">\n      <div style="display:flex;justify-content:space-between;align-items:center">\n        <a href="#" class="link" data-id="${e.id}">${e.is_pinned?"📌 ":""}${e.title}</a>\n        <span class="meta">${new Date(e.created_at).toLocaleString()}</span>\n      </div>\n      <div class="meta">${e.profiles?.nickname||"匿名"} · ${e.boards?.name||""}</div>\n    </article>\n  `).join(""),threadList.querySelectorAll("a[data-id]").forEach(e=>{e.onclick=t=>{t.preventDefault(),openThread(parseInt(e.dataset.id,10))}}))}async function openThread(e){currentThreadId=e;const{data:t,error:a}=await sb.from("threads").select("id,title,body,created_at,profiles:author(nickname)").eq("id",e).single();if(a)return void console.error(a);tdTitle.textContent=t.title,tdMeta.textContent=`${t.profiles?.nickname||"匿名"} · ${new Date(t.created_at).toLocaleString()}`,tdBody.textContent=t.body||"",detail.style.display="block";const{data:n,error:r}=await sb.from("posts").select("id,body,created_at,profiles:author(nickname)").eq("thread_id",e).order("created_at");r?console.error(r):renderReplies(n||[])}function renderReplies(e){$("#replyList").innerHTML=e.map(e=>`\n    <div style="border-top:1px solid var(--line);padding:8px 0">\n      <div class="meta">${e.profiles?.nickname||"匿名"} · ${new Date(e.created_at).toLocaleString()}</div>\n      <div style="white-space:pre-wrap">${e.body}</div>\n    </div>\n  `).join("")}sb.auth.onAuthStateChange((e,t)=>{me=t?.user||null,who.textContent=me?me.email||"已登录":"未登录",btnLogin.style.display=me?"none":"inline-block",btnLogout.style.display=me?"inline-block":"none"}),btnLogin.onclick=async()=>{const e=prompt("输入邮箱用于登录/注册（将发送魔法链接）：");if(!e)return;const{error:t}=await sb.auth.signInWithOtp({email:e});alert(t?"发送失败："+t.message:"已发送登录邮件，请查收。")},btnLogout.onclick=async()=>{await sb.auth.signOut(),location.reload()},btnReply.onclick=async()=>{if(!me)return void alert("请先登录");if(!currentThreadId)return;const e=replyBody.value.trim();if(!e)return;const{error:t}=await sb.from("posts").insert({thread_id:currentThreadId,body:e,author:me.id});if(t)return alert("回复失败："+t.message);replyBody.value="",openThread(currentThreadId)},$("#btnPost").onclick=publishThread,async function(){sb.auth.getUser().then(async({data:e})=>{const t=e?.user?.id;if(t){const{data:a}=await sb.from("profiles").select("user_id").eq("user_id",t).maybeSingle();a||await sb.from("profiles").insert({user_id:t,nickname:(e.user.email||"用户").split("@")[0]})}}),await loadBoards(),await loadThreads()}()</script><script src=https://unpkg.com/@supabase/supabase-js@2></script><script>const supabase=supabase.createClient("你的SUPABASE_URL","你的PUBLIC_ANON_KEY");async function sendMagicLink(e){const{error:a}=await supabase.auth.signInWithOtp({email:e,options:{emailRedirectTo:`${location.origin}/bbs.html`}});a?alert("发送失败："+a.message):alert("已发送登录链接，请查收邮箱")}(async()=>{if(/code=|access_token=/.test(location.href)){const{data:e,error:a}=await supabase.auth.exchangeCodeForSession(location.href);a?alert("登录回调失败："+a.message):(console.log("登录成功",e.session?.user),history.replaceState({},"",location.pathname))}})()</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dodva 社区 · BBS MVP</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<style>
+  :root{--bg:#0b0f1a;--fg:#eaf2ff;--line:rgba(147,197,253,.18)}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans SC",sans-serif}
+  header{position:sticky;top:0;padding:10px 16px;background:linear-gradient(180deg,rgba(10,16,34,.55),rgba(10,16,34,.35));border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  .wrap{max-width:1000px;margin:0 auto;padding:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .pill{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(147,197,253,.06);color:#eaf2ff;cursor:pointer;text-decoration:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(147,197,253,.06)}
+  .muted{opacity:.75}
+  input,textarea,select{width:100%;padding:8px;border-radius:10px;border:1px solid var(--line);background:rgba(147,197,253,.06);color:#eaf2ff}
+  textarea{min-height:120px}
+  .meta{font-size:12px;opacity:.75}
+  .link{color:#93c5fd}
+</style>
+</head>
+<body>
+<header>
+  <div>🌆 社区BBS</div>
+  <div class="row" style="margin-left:auto">
+    <span id="who" class="muted">未登录</span>
+    <button id="btnLogin"  class="pill">登录/注册</button>
+    <button id="btnLogout" class="pill" style="display:none">退出</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="row">
+      <select id="boardSel"></select>
+      <input id="title" placeholder="标题（如：SoHo 店铺出租 7200sqf/每月$4200）"/>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <textarea id="body" placeholder="内容支持简要信息（位置/面积/租金/联系方式）或任意描述。"></textarea>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="btnPost" class="pill">发布</button>
+      <span class="muted">登录后可发帖；发出即刻可见。</span>
+    </div>
+  </section>
+
+  <h3 style="margin:14px 0 8px">📌 最新帖子</h3>
+  <div id="threadList" class="grid"></div>
+
+  <section id="threadDetail" class="card" style="display:none;margin-top:14px">
+    <div id="tdTitle" style="font-weight:800"></div>
+    <div id="tdMeta" class="meta"></div>
+    <div id="tdBody" style="margin:8px 0 12px;white-space:pre-wrap"></div>
+    <div class="row">
+      <textarea id="replyBody" placeholder="回复内容…"></textarea>
+      <button id="btnReply" class="pill">回帖</button>
+    </div>
+    <div id="replyList" style="margin-top:10px"></div>
+  </section>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const SUPABASE_URL = "https://ijwamnzsyqpufkqgwvzi.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqd2FtbnpzeXFwdWZrcWd3dnppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MjA3MTAsImV4cCI6MjA3MTE5NjcxMH0.-7zCB0MVmT0ki-eNUIuMvjNY0TbtxsnVHZv7h3qfJCA";
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+(async () => {
+  const url = new URL(window.location.href);
+
+  // ① OAuth/PKEC 回调（?code=...）
+  if (url.searchParams.get('code')) {
+    const { error } = await sb.auth.exchangeCodeForSession({ queryString: url.search });
+    // 清理地址栏
+    history.replaceState({}, '', url.origin + url.pathname);
+    if (error) console.warn('exchangeCodeForSession:', error);
+  }
+
+  // ② Magic Link 回调（?token_hash=...&type=magiclink）
+  if (url.searchParams.get('token_hash') && url.searchParams.get('type') === 'magiclink') {
+    const { error } = await sb.auth.verifyOtp({
+      type: 'magiclink',
+      token_hash: url.searchParams.get('token_hash')
+    });
+    history.replaceState({}, '', url.origin + url.pathname);
+    if (error) console.warn('verifyOtp:', error);
+  }
+
+  // ③ 直接看看是否已登录
+  const { data: sess } = await sb.auth.getSession();
+  if (sess?.session) {
+    // 已登录：触发你的 UI 刷新逻辑（可选）
+    who.textContent = sess.session.user.email || '已登录';
+    btnLogin.style.display = 'none';
+    btnLogout.style.display = 'inline-block';
+  }
+})();
+const $ = s=>document.querySelector(s);
+const who = $('#who'), btnLogin=$('#btnLogin'), btnLogout=$('#btnLogout');
+const boardSel=$('#boardSel'), titleEl=$('#title'), bodyEl=$('#body');
+const threadList=$('#threadList');
+const detail=$('#threadDetail'), tdTitle=$('#tdTitle'), tdMeta=$('#tdMeta'), tdBody=$('#tdBody');
+const replyBody=$('#replyBody'), btnReply=$('#btnReply');
+
+let me = null;
+let currentThreadId = null;
+
+sb.auth.onAuthStateChange((_e, session)=>{
+  me = session?.user || null;
+  who.textContent = me ? (me.email||'已登录') : '未登录';
+  btnLogin.style.display = me ? 'none' : 'inline-block';
+  btnLogout.style.display = me ? 'inline-block' : 'none';
+});
+
+
+
+async function loadBoards(){
+  const { data, error } = await sb.from('boards').select('*').eq('is_hidden', false).order('id');
+  if (error) return console.error(error);
+  boardSel.innerHTML = data.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+}
+btnLogin.onclick = async ()=>{
+  const email = prompt('输入邮箱用于登录/注册（将发送魔法链接）：');
+  if (!email) return;
+  const emailRedirectTo = `${location.origin}/bbs.html`;
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo }
+  });
+  alert(error ? '发送失败：'+error.message : '已发送登录邮件，请查收。');
+};
+
+async function publishThread(){
+  if (!me){ alert('请先登录'); return; }
+  const board_id = parseInt(boardSel.value,10);
+  const title = titleEl.value.trim();
+  const body  = bodyEl.value.trim();
+  if (!title) return alert('请填写标题');
+  const { error } = await sb.from('threads').insert({ board_id, title, body, author: me.id });
+  if (error) return alert('发布失败：'+error.message);
+  titleEl.value=''; bodyEl.value='';
+  await loadThreads();
+}
+
+async function loadThreads(){
+  const { data, error } = await sb.from('threads')
+    .select('id,title,created_at,is_pinned,boards(name),profiles:author(nickname)')
+    .order('is_pinned',{ascending:false}).order('created_at',{ascending:false}).limit(20);
+  if (error){ console.error(error); return; }
+
+  threadList.innerHTML = data.map(t=>`
+    <article class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <a href="#" class="link" data-id="${t.id}">${t.is_pinned?'📌 ':''}${t.title}</a>
+        <span class="meta">${new Date(t.created_at).toLocaleString()}</span>
+      </div>
+      <div class="meta">${t.profiles?.nickname||'匿名'} · ${t.boards?.name||''}</div>
+    </article>
+  `).join('');
+
+  threadList.querySelectorAll('a[data-id]').forEach(a=>{
+    a.onclick = (e)=>{ e.preventDefault(); openThread(parseInt(a.dataset.id,10)); };
+  });
+}
+
+async function openThread(id){
+  currentThreadId = id;
+  // 详情
+  const { data: t, error: e1 } = await sb.from('threads')
+    .select('id,title,body,created_at,profiles:author(nickname)').eq('id', id).single();
+  if (e1){ console.error(e1); return; }
+  tdTitle.textContent = t.title;
+  tdMeta.textContent  = `${t.profiles?.nickname||'匿名'} · ${new Date(t.created_at).toLocaleString()}`;
+  tdBody.textContent  = t.body||'';
+  detail.style.display='block';
+  // 回帖
+  const { data: ps, error: e2 } = await sb.from('posts')
+    .select('id,body,created_at,profiles:author(nickname)')
+    .eq('thread_id', id).order('created_at');
+  if (e2){ console.error(e2); return; }
+  renderReplies(ps||[]);
+}
+
+function renderReplies(list){
+  $('#replyList').innerHTML = list.map(p=>`
+    <div style="border-top:1px solid var(--line);padding:8px 0">
+      <div class="meta">${p.profiles?.nickname||'匿名'} · ${new Date(p.created_at).toLocaleString()}</div>
+      <div style="white-space:pre-wrap">${p.body}</div>
+    </div>
+  `).join('');
+}
+
+btnReply.onclick = async ()=>{
+  if (!me){ alert('请先登录'); return; }
+  if (!currentThreadId) return;
+  const body = replyBody.value.trim();
+  if (!body) return;
+  const { error } = await sb.from('posts').insert({ thread_id: currentThreadId, body, author: me.id });
+  if (error) return alert('回复失败：'+error.message);
+  replyBody.value='';
+  openThread(currentThreadId);
+};
+
+$('#btnPost').onclick = publishThread;
+
+(async function init(){
+  // 尝试读取昵称，没有就自动创建一个默认 profile
+  sb.auth.getUser().then(async ({ data })=>{
+    const uid = data?.user?.id;
+    if (uid){
+      const { data: p } = await sb.from('profiles').select('user_id').eq('user_id', uid).maybeSingle();
+      if (!p){ await sb.from('profiles').insert({ user_id: uid, nickname: (data.user.email||'用户').split('@')[0] }); }
+    }
+  });
+  await loadBoards();
+  await loadThreads();
+})();
+</script>
+</body>
+</html>
